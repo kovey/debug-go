@@ -45,6 +45,7 @@ const (
 	Debug_Dbug DebugType = "dbug"
 	Debug_Warn DebugType = "warn"
 	Debug_Erro DebugType = "erro"
+	Debug_None DebugType = "none"
 )
 
 const (
