@@ -8,4 +8,5 @@ func TestDebug(t *testing.T) {
 	Dbug("test [%s] ...", Debug_Dbug)
 	Warn("test [%s] ...", Debug_Warn)
 	Erro("test [%s] ...", Debug_Erro)
+	Test("test [%s] ...", Debug_Test)
 }

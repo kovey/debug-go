@@ -38,7 +38,8 @@ const (
 	val_dbug DebugValue = 2
 	val_warn DebugValue = 3
 	val_erro DebugValue = 4
-	val_none DebugValue = 5
+	val_test DebugValue = 5
+	val_none DebugValue = 6
 )
 
 const (
@@ -46,6 +47,7 @@ const (
 	Debug_Dbug DebugType = "dbug"
 	Debug_Warn DebugType = "warn"
 	Debug_Erro DebugType = "erro"
+	Debug_Test DebugType = "test"
 	Debug_None DebugType = "none"
 )
 
@@ -63,13 +65,14 @@ var maps = DebugLevels{
 	Debug_Dbug: val_dbug,
 	Debug_Warn: val_warn,
 	Debug_Erro: val_erro,
+	Debug_Test: val_test,
 }
 
 func SetLevel(t DebugType) {
 	level = maps.Get(t)
 }
 
-func echo(format string, t DebugType, args ...interface{}) {
+func echo(format string, t DebugType, args ...any) {
 	if !maps.CanShow(t) {
 		return
 	}
@@ -102,6 +105,15 @@ func echo(format string, t DebugType, args ...interface{}) {
 		}
 		str := fmt.Sprintf(echoFormat, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...))
 		fmt.Print(color.Magenta(str))
+	case Debug_Test:
+		if fileLineSwitch == File_Line_Show {
+			_, file, line, _ := runtime.Caller(caller)
+			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...), file, line)
+			fmt.Print(color.Green(str))
+			return
+		}
+		str := fmt.Sprintf(echoFormat, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...))
+		fmt.Print(color.Green(str))
 	default:
 		if fileLineSwitch == File_Line_Show {
 			_, file, line, _ := runtime.Caller(caller)
@@ -112,18 +124,22 @@ func echo(format string, t DebugType, args ...interface{}) {
 	}
 }
 
-func Info(format string, args ...interface{}) {
+func Info(format string, args ...any) {
 	echo(format, Debug_Info, args...)
 }
 
-func Erro(format string, args ...interface{}) {
+func Erro(format string, args ...any) {
 	echo(format, Debug_Erro, args...)
 }
 
-func Warn(format string, args ...interface{}) {
+func Warn(format string, args ...any) {
 	echo(format, Debug_Warn, args...)
 }
 
-func Dbug(format string, args ...interface{}) {
+func Dbug(format string, args ...any) {
 	echo(format, Debug_Dbug, args...)
+}
+
+func Test(format string, args ...any) {
+	echo(format, Debug_Test, args...)
 }
