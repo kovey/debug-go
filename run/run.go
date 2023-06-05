@@ -13,7 +13,7 @@ func RunCo(f func()) {
 	f()
 }
 
-func Panic(err interface{}) bool {
+func Panic(err any) bool {
 	if err == nil {
 		return false
 	}

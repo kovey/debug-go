@@ -53,7 +53,7 @@ const (
 
 const (
 	echoFormat         = "[%s][%s] %s\n"
-	echoFormatFileLine = "[%s][%s] %s in file %s on line %d\n"
+	echoFormatFileLine = "[%s][%s] %s(%d): %s\n"
 )
 
 const (
@@ -81,7 +81,7 @@ func echo(format string, t DebugType, args ...any) {
 	case Debug_Warn:
 		if fileLineSwitch == File_Line_Show {
 			_, file, line, _ := runtime.Caller(caller)
-			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...), file, line)
+			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
 			fmt.Print(color.Yellow(str))
 			return
 		}
@@ -90,7 +90,7 @@ func echo(format string, t DebugType, args ...any) {
 	case Debug_Erro:
 		if fileLineSwitch == File_Line_Show {
 			_, file, line, _ := runtime.Caller(caller)
-			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...), file, line)
+			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
 			fmt.Print(color.Red(str))
 			return
 		}
@@ -99,7 +99,7 @@ func echo(format string, t DebugType, args ...any) {
 	case Debug_Dbug:
 		if fileLineSwitch == File_Line_Show {
 			_, file, line, _ := runtime.Caller(caller)
-			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...), file, line)
+			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
 			fmt.Print(color.Magenta(str))
 			return
 		}
@@ -108,7 +108,7 @@ func echo(format string, t DebugType, args ...any) {
 	case Debug_Test:
 		if fileLineSwitch == File_Line_Show {
 			_, file, line, _ := runtime.Caller(caller)
-			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...), file, line)
+			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
 			fmt.Print(color.Green(str))
 			return
 		}
@@ -117,7 +117,7 @@ func echo(format string, t DebugType, args ...any) {
 	default:
 		if fileLineSwitch == File_Line_Show {
 			_, file, line, _ := runtime.Caller(caller)
-			fmt.Printf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...), file, line)
+			fmt.Printf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
 			return
 		}
 		fmt.Printf(echoFormat, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...))

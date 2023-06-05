@@ -54,7 +54,7 @@ func color(c Color) string {
 	return ""
 }
 
-func bg(c Color) string {
+func Bg(c Color) string {
 	if bg, ok := bgs[c]; ok {
 		return bg
 	}
