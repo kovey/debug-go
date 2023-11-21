@@ -13,3 +13,7 @@ func Date(t time.Time) string {
 func Time(t time.Time) string {
 	return t.Format(time.TimeOnly)
 }
+
+func ToTime(timestamp string) (time.Time, error) {
+	return time.ParseInLocation(time.DateTime, timestamp, time.Local)
+}
