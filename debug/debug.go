@@ -3,10 +3,9 @@ package debug
 import (
 	"fmt"
 	"runtime"
-	"time"
 
 	"github.com/kovey/debug-go/color"
-	"github.com/kovey/debug-go/util"
+	"github.com/kovey/debug-go/util/now"
 )
 
 type DebugType string
@@ -57,7 +56,7 @@ const (
 )
 
 const (
-	caller = 2
+	caller = 3
 )
 
 var maps = DebugLevels{
@@ -79,49 +78,31 @@ func echo(format string, t DebugType, args ...any) {
 
 	switch t {
 	case Debug_Warn:
-		if fileLineSwitch == File_Line_Show {
-			_, file, line, _ := runtime.Caller(caller)
-			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
-			fmt.Print(color.Yellow(str))
-			return
-		}
-		str := fmt.Sprintf(echoFormat, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...))
-		fmt.Print(color.Yellow(str))
+		_echo(t, format, args, color.Yellow)
 	case Debug_Erro:
-		if fileLineSwitch == File_Line_Show {
-			_, file, line, _ := runtime.Caller(caller)
-			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
-			fmt.Print(color.Red(str))
-			return
-		}
-		str := fmt.Sprintf(echoFormat, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...))
-		fmt.Print(color.Red(str))
+		_echo(t, format, args, color.Red)
 	case Debug_Dbug:
-		if fileLineSwitch == File_Line_Show {
-			_, file, line, _ := runtime.Caller(caller)
-			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
-			fmt.Print(color.Magenta(str))
-			return
-		}
-		str := fmt.Sprintf(echoFormat, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...))
-		fmt.Print(color.Magenta(str))
+		_echo(t, format, args, color.Magenta)
 	case Debug_Test:
-		if fileLineSwitch == File_Line_Show {
-			_, file, line, _ := runtime.Caller(caller)
-			str := fmt.Sprintf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
-			fmt.Print(color.Green(str))
-			return
-		}
-		str := fmt.Sprintf(echoFormat, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...))
-		fmt.Print(color.Green(str))
+		_echo(t, format, args, color.Green)
 	default:
-		if fileLineSwitch == File_Line_Show {
-			_, file, line, _ := runtime.Caller(caller)
-			fmt.Printf(echoFormatFileLine, time.Now().Format(util.Golang_Birthday_Time), t, file, line, fmt.Sprintf(format, args...))
-			return
-		}
-		fmt.Printf(echoFormat, time.Now().Format(util.Golang_Birthday_Time), t, fmt.Sprintf(format, args...))
+		_echo(t, format, args, _info)
 	}
+}
+
+func _info(content string) string {
+	return content
+}
+
+func _echo(t DebugType, format string, args []any, color func(string) string) {
+	if fileLineSwitch == File_Line_Show {
+		_, file, line, _ := runtime.Caller(caller)
+		str := fmt.Sprintf(echoFormatFileLine, now.DateTime(), t, file, line, fmt.Sprintf(format, args...))
+		fmt.Print(color(str))
+		return
+	}
+	str := fmt.Sprintf(echoFormat, now.DateTime(), t, fmt.Sprintf(format, args...))
+	fmt.Print(color(str))
 }
 
 func Info(format string, args ...any) {
