@@ -2,6 +2,8 @@ package debug
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"runtime"
 
 	"github.com/kovey/debug-go/color"
@@ -15,6 +17,11 @@ type DebugValue int32
 type DebugLevels map[DebugType]DebugValue
 
 var level DebugValue = val_info
+var writer io.Writer = os.Stdout
+
+func SetWriter(w io.Writer) {
+	writer = w
+}
 
 func (d DebugLevels) CanShow(t DebugType) bool {
 	if l, ok := d[t]; ok {
@@ -98,11 +105,11 @@ func _echo(t DebugType, format string, args []any, color func(string) string) {
 	if fileLineSwitch == File_Line_Show {
 		_, file, line, _ := runtime.Caller(caller)
 		str := fmt.Sprintf(echoFormatFileLine, now.DateTime(), t, file, line, fmt.Sprintf(format, args...))
-		fmt.Print(color(str))
+		writer.Write([]byte(color(str)))
 		return
 	}
 	str := fmt.Sprintf(echoFormat, now.DateTime(), t, fmt.Sprintf(format, args...))
-	fmt.Print(color(str))
+	writer.Write([]byte(color(str)))
 }
 
 func Info(format string, args ...any) {
