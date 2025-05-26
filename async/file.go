@@ -3,7 +3,8 @@ package async
 import "os"
 
 type file struct {
-	f *os.File
+	f    *os.File
+	path string
 }
 
 func (f *file) close() error {
@@ -21,10 +22,23 @@ func (f *file) open(path string) error {
 	}
 
 	f.f = fi
+	f.path = path
 	return nil
 }
 
 func (f *file) write(data []byte) error {
 	_, err := f.f.Write(data)
+	if err == os.ErrClosed {
+		if f.path == "" {
+			return err
+		}
+
+		if err := f.open(f.path); err != nil {
+			return err
+		}
+
+		_, err = f.f.Write(data)
+	}
+
 	return err
 }

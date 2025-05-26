@@ -50,11 +50,13 @@ func (l *logFile) Start() error {
 		return fmt.Errorf("logDir[%s] is file", l.logDir)
 	}
 
-	return nil
+	return l.file.open(fmt.Sprintf("%s/%s.log", l.logDir, l.date))
 }
 
 func (l *logFile) Listen() {
 	defer l.ticker.Stop()
+	defer l.file.close()
+
 	for {
 		select {
 		case <-l.sig:
