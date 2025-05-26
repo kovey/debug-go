@@ -39,11 +39,13 @@ func (l *logFile) reopen(date string) {
 func (l *logFile) Start() error {
 	stat, err := os.Stat(l.logDir)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return os.MkdirAll(l.logDir, 0755)
+		if !os.IsNotExist(err) {
+			return err
 		}
 
-		return err
+		if err := os.MkdirAll(l.logDir, 0755); err != nil && !os.IsExist(err) {
+			return err
+		}
 	}
 
 	if !stat.IsDir() {
