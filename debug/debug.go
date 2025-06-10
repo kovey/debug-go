@@ -41,6 +41,10 @@ func UseJsonFormat() {
 	formatType = Format_Json
 }
 
+func FormatIsJson() bool {
+	return formatType == Format_Json
+}
+
 func (d DebugLevels) CanShow(t DebugType) bool {
 	if l, ok := d[t]; ok {
 		return l >= level
