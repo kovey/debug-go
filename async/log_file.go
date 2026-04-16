@@ -1,6 +1,7 @@
 package async
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -11,14 +12,13 @@ import (
 type logFile struct {
 	logDir string
 	data   chan []byte
-	sig    chan bool
 	date   string
 	ticker *time.Ticker
 	file   *file
 }
 
 func newLogFile(logDir string, length int) *logFile {
-	return &logFile{logDir: logDir, data: make(chan []byte, length), date: time.Now().Format(time.DateOnly), sig: make(chan bool, 1), ticker: time.NewTicker(1 * time.Second), file: &file{}}
+	return &logFile{logDir: logDir, data: make(chan []byte, length), date: time.Now().Format(time.DateOnly), ticker: time.NewTicker(1 * time.Second), file: &file{}}
 }
 
 func (l *logFile) Write(p []byte) (n int, err error) {
@@ -55,13 +55,13 @@ func (l *logFile) Start() error {
 	return l.file.open(fmt.Sprintf("%s/%s.log", l.logDir, l.date))
 }
 
-func (l *logFile) Listen() {
+func (l *logFile) Listen(ctx context.Context) {
 	defer l.ticker.Stop()
 	defer l.file.close()
 
 	for {
 		select {
-		case <-l.sig:
+		case <-ctx.Done():
 			return
 		case now := <-l.ticker.C:
 			date := now.Format(time.DateOnly)
@@ -74,8 +74,4 @@ func (l *logFile) Listen() {
 			}
 		}
 	}
-}
-
-func (l *logFile) Stop() {
-	l.sig <- true
 }

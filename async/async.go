@@ -1,6 +1,10 @@
 package async
 
-import "github.com/kovey/debug-go/debug"
+import (
+	"context"
+
+	"github.com/kovey/debug-go/debug"
+)
 
 var lf *logFile
 
@@ -14,18 +18,10 @@ func Start(logDir string, length int) error {
 	return nil
 }
 
-func Listen() {
+func Listen(ctx context.Context) {
 	if lf == nil {
 		return
 	}
 
-	lf.Listen()
-}
-
-func Stop() {
-	if lf == nil {
-		return
-	}
-
-	lf.Stop()
+	lf.Listen(ctx)
 }
