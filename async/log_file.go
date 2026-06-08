@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync/atomic"
 	"time"
 
 	"github.com/kovey/debug-go/debug"
@@ -15,6 +16,7 @@ type logFile struct {
 	date   string
 	ticker *time.Ticker
 	file   *file
+	closed atomic.Bool
 }
 
 func newLogFile(logDir string, length int) *logFile {
@@ -22,8 +24,16 @@ func newLogFile(logDir string, length int) *logFile {
 }
 
 func (l *logFile) Write(p []byte) (n int, err error) {
-	l.data <- p
-	return len(p), nil
+	if l.closed.Load() {
+		return 0, fmt.Errorf("log is closed")
+	}
+
+	select {
+	case l.data <- p:
+		return len(p), nil
+	default:
+		return 0, fmt.Errorf("log is full")
+	}
 }
 
 func (l *logFile) reopen(date string) {
@@ -43,7 +53,7 @@ func (l *logFile) Start() error {
 			return err
 		}
 
-		if err := os.MkdirAll(l.logDir, 0755); err != nil && !os.IsExist(err) {
+		if err := os.MkdirAll(l.logDir, 0o755); err != nil && !os.IsExist(err) {
 			return err
 		}
 	}
@@ -57,7 +67,6 @@ func (l *logFile) Start() error {
 
 func (l *logFile) Listen(ctx context.Context) {
 	defer l.ticker.Stop()
-	defer l.file.close()
 
 	for {
 		select {
@@ -72,6 +81,19 @@ func (l *logFile) Listen(ctx context.Context) {
 			if err := l.file.write(logData); err != nil {
 				fmt.Println(err.Error())
 			}
+		}
+	}
+}
+
+func (l *logFile) Close() {
+	if !l.closed.CompareAndSwap(false, true) {
+		return
+	}
+	defer l.file.close()
+	close(l.data)
+	for logData := range l.data {
+		if err := l.file.write(logData); err != nil {
+			fmt.Println(err.Error())
 		}
 	}
 }

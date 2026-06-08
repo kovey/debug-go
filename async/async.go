@@ -25,3 +25,11 @@ func Listen(ctx context.Context) {
 
 	lf.Listen(ctx)
 }
+
+func Close() {
+	if lf == nil {
+		return
+	}
+
+	lf.Close()
+}
