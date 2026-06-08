@@ -77,7 +77,16 @@ func (l *logFile) Listen(ctx context.Context) {
 			if date != l.date {
 				l.reopen(date)
 			}
-		case logData := <-l.data:
+		case logData, ok := <-l.data:
+			if !ok {
+				if logData != nil {
+					if err := l.file.write(logData); err != nil {
+						fmt.Println(err.Error())
+					}
+				}
+				return
+			}
+
 			if err := l.file.write(logData); err != nil {
 				fmt.Println(err.Error())
 			}
