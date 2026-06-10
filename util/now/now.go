@@ -1,3 +1,4 @@
+// Package now
 package now
 
 import (

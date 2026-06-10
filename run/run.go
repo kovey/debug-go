@@ -1,7 +1,10 @@
+// Package run
 package run
 
 import (
+	"fmt"
 	"runtime"
+	"strings"
 
 	"github.com/kovey/debug-go/debug"
 )
@@ -18,15 +21,15 @@ func Panic(err any) bool {
 		return false
 	}
 
-	debug.Erro("panic error[%s]", err)
-
+	logs := []string{fmt.Sprintf("panic error[%s]", err)}
 	for i := 3; ; i++ {
 		_, file, line, ok := runtime.Caller(i)
 		if !ok {
 			break
 		}
-		debug.Erro("%s(%d)", file, line)
+		logs = append(logs, fmt.Sprintf("%s(%d)", file, line))
 	}
 
+	debug.Erro(strings.Join(logs, "\r\n"))
 	return true
 }

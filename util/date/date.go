@@ -1,3 +1,4 @@
+// Package date
 package date
 
 import "time"
