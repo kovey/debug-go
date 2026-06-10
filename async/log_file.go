@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -17,10 +18,11 @@ type logFile struct {
 	ticker *time.Ticker
 	file   *file
 	closed atomic.Bool
+	wait   sync.WaitGroup
 }
 
 func newLogFile(logDir string, length int) *logFile {
-	return &logFile{logDir: logDir, data: make(chan []byte, length), date: time.Now().Format(time.DateOnly), ticker: time.NewTicker(1 * time.Second), file: &file{}}
+	return &logFile{logDir: logDir, data: make(chan []byte, length), date: time.Now().Format(time.DateOnly), ticker: time.NewTicker(1 * time.Second), file: &file{}, wait: sync.WaitGroup{}}
 }
 
 func (l *logFile) Write(p []byte) (n int, err error) {
@@ -66,7 +68,9 @@ func (l *logFile) Start() error {
 }
 
 func (l *logFile) Listen(ctx context.Context) {
+	l.wait.Add(1)
 	defer l.ticker.Stop()
+	defer l.wait.Done()
 
 	for {
 		select {
@@ -105,4 +109,5 @@ func (l *logFile) Close() {
 			fmt.Println(err.Error())
 		}
 	}
+	l.wait.Wait()
 }
