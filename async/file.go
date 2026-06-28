@@ -1,6 +1,10 @@
 package async
 
-import "os"
+import (
+	"errors"
+	"fmt"
+	"os"
+)
 
 type file struct {
 	f    *os.File
@@ -27,8 +31,17 @@ func (f *file) open(path string) error {
 }
 
 func (f *file) write(data []byte) error {
+	if f.f == nil {
+		if f.path == "" {
+			return fmt.Errorf("file is not opened")
+		}
+		if err := f.open(f.path); err != nil {
+			return err
+		}
+	}
+
 	_, err := f.f.Write(data)
-	if err == os.ErrClosed {
+	if errors.Is(err, os.ErrClosed) {
 		if f.path == "" {
 			return err
 		}

@@ -3,6 +3,7 @@ package debug
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"runtime"
 
 	"github.com/kovey/debug-go/color"
@@ -100,8 +101,11 @@ func (l *Log) Test(format string, args ...any) {
 }
 
 func (l *Log) Json(data any) {
-	if buff, err := json.Marshal(data); err == nil {
-		writer.Write(buff)
-		writer.Write([]byte("\r\n"))
+	buff, err := json.Marshal(data)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[%s][erro] json marshal failure: %s\r\n", now.DateTime(), err)
+		return
 	}
+	writer.Write(buff)
+	writer.Write([]byte("\r\n"))
 }

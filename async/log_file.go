@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/kovey/debug-go/debug"
@@ -17,7 +16,8 @@ type logFile struct {
 	date   string
 	ticker *time.Ticker
 	file   *file
-	closed atomic.Bool
+	mu     sync.RWMutex
+	closed bool
 	wait   sync.WaitGroup
 }
 
@@ -26,7 +26,9 @@ func newLogFile(logDir string, length int) *logFile {
 }
 
 func (l *logFile) Write(p []byte) (n int, err error) {
-	if l.closed.Load() {
+	l.mu.RLock()
+	defer l.mu.RUnlock()
+	if l.closed {
 		return 0, fmt.Errorf("log is closed")
 	}
 
@@ -39,12 +41,18 @@ func (l *logFile) Write(p []byte) (n int, err error) {
 }
 
 func (l *logFile) reopen(date string) {
-	if err := l.file.close(); err != nil {
-		debug.Erro("close log file[%s] failure: %s", fmt.Sprintf("%s/%s.log", l.logDir, l.date), err)
+	newPath := fmt.Sprintf("%s/%s.log", l.logDir, date)
+	newFile := &file{}
+	if err := newFile.open(newPath); err != nil {
+		debug.Erro("open new log file[%s] failure: %s", newPath, err)
 		return
 	}
 
-	l.file.open(fmt.Sprintf("%s/%s.log", l.logDir, date))
+	if err := l.file.close(); err != nil {
+		debug.Erro("close old log file[%s/%s.log] failure: %s", l.logDir, l.date, err)
+	}
+
+	l.file = newFile
 	l.date = date
 }
 
@@ -56,6 +64,12 @@ func (l *logFile) Start() error {
 		}
 
 		if err := os.MkdirAll(l.logDir, 0o755); err != nil && !os.IsExist(err) {
+			return err
+		}
+
+		// Re-stat after directory creation to get valid stat info
+		stat, err = os.Stat(l.logDir)
+		if err != nil {
 			return err
 		}
 	}
@@ -83,11 +97,6 @@ func (l *logFile) Listen(ctx context.Context) {
 			}
 		case logData, ok := <-l.data:
 			if !ok {
-				if logData != nil {
-					if err := l.file.write(logData); err != nil {
-						fmt.Println(err.Error())
-					}
-				}
 				return
 			}
 
@@ -99,9 +108,14 @@ func (l *logFile) Listen(ctx context.Context) {
 }
 
 func (l *logFile) Close() {
-	if !l.closed.CompareAndSwap(false, true) {
+	l.mu.Lock()
+	if l.closed {
+		l.mu.Unlock()
 		return
 	}
+	l.closed = true
+	l.mu.Unlock()
+
 	defer l.file.close()
 	close(l.data)
 	for logData := range l.data {

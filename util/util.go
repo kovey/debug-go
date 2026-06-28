@@ -26,11 +26,7 @@ func RunDir() string {
 
 func IsFile(file string) bool {
 	_, err := os.Stat(file)
-	if err == nil {
-		return true
-	}
-
-	return os.IsExist(err)
+	return err == nil
 }
 
 func CurrentDir() string {
