@@ -18,11 +18,16 @@ type logFile struct {
 	file   *file
 	mu     sync.RWMutex
 	closed bool
-	wait   sync.WaitGroup
 }
 
 func newLogFile(logDir string, length int) *logFile {
-	return &logFile{logDir: logDir, data: make(chan []byte, length), date: time.Now().Format(time.DateOnly), ticker: time.NewTicker(1 * time.Second), file: &file{}, wait: sync.WaitGroup{}}
+	return &logFile{
+		logDir: logDir,
+		data:   make(chan []byte, length),
+		date:   time.Now().Format(time.DateOnly),
+		ticker: time.NewTicker(1 * time.Second),
+		file:   &file{},
+	}
 }
 
 func (l *logFile) Write(p []byte) (n int, err error) {
@@ -41,18 +46,20 @@ func (l *logFile) Write(p []byte) (n int, err error) {
 }
 
 func (l *logFile) reopen(date string) {
+	l.file.mu.Lock()
+	defer l.file.mu.Unlock()
+
 	newPath := fmt.Sprintf("%s/%s.log", l.logDir, date)
-	newFile := &file{}
-	if err := newFile.open(newPath); err != nil {
+
+	if err := l.file.closeLocked(); err != nil {
+		debug.Erro("close old log file[%s/%s.log] failure: %s", l.logDir, l.date, err)
+	}
+
+	if err := l.file.openLocked(newPath); err != nil {
 		debug.Erro("open new log file[%s] failure: %s", newPath, err)
 		return
 	}
 
-	if err := l.file.close(); err != nil {
-		debug.Erro("close old log file[%s/%s.log] failure: %s", l.logDir, l.date, err)
-	}
-
-	l.file = newFile
 	l.date = date
 }
 
@@ -78,13 +85,11 @@ func (l *logFile) Start() error {
 		return fmt.Errorf("logDir[%s] is file", l.logDir)
 	}
 
-	return l.file.open(fmt.Sprintf("%s/%s.log", l.logDir, l.date))
+	return l.file.openLocked(fmt.Sprintf("%s/%s.log", l.logDir, l.date))
 }
 
 func (l *logFile) Listen(ctx context.Context) {
-	l.wait.Add(1)
 	defer l.ticker.Stop()
-	defer l.wait.Done()
 
 	for {
 		select {
@@ -116,12 +121,19 @@ func (l *logFile) Close() {
 	l.closed = true
 	l.mu.Unlock()
 
-	defer l.file.close()
+	// Signal Listen to stop by closing the channel.
 	close(l.data)
+
+	// Drain any remaining buffered data. The file mutex protects
+	// against concurrent writes if Listen is still processing a
+	// message it received before the channel closed.
+	l.file.mu.Lock()
+	defer l.file.mu.Unlock()
+	defer l.file.closeLocked()
+
 	for logData := range l.data {
-		if err := l.file.write(logData); err != nil {
+		if err := l.file.writeLocked(logData); err != nil {
 			fmt.Println(err.Error())
 		}
 	}
-	l.wait.Wait()
 }
